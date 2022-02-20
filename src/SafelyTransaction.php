@@ -3,8 +3,9 @@
 namespace O21;
 
 use Closure;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Contracts\Database\Query\Builder as BuilderContract;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use JetBrains\PhpStorm\Pure;
 
 class SafelyTransaction
@@ -13,7 +14,7 @@ class SafelyTransaction
 
     protected ?Model $lockModel = null;
 
-    protected ?BuilderContract $query = null;
+    protected QueryBuilder|EloquentBuilder|Model|null $query = null;
 
     protected ?Closure $catch = null;
 
@@ -23,11 +24,11 @@ class SafelyTransaction
      * SafelyTransaction constructor.
      *
      * @param  \Closure  $closure
-     * @param  \Illuminate\Database\Eloquent\Model|\Illuminate\Contracts\Database\Query\Builder|null  $query
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Eloquent\Model|null  $query
      */
     public function __construct(
         Closure $closure,
-        Model|BuilderContract $query = null
+        QueryBuilder|EloquentBuilder|Model|null $query = null
     ) {
         $this->closure = $closure;
 
@@ -48,13 +49,13 @@ class SafelyTransaction
         return $this;
     }
 
-    public function lockOn(Model|BuilderContract $query): self
+    public function lockOn(QueryBuilder|EloquentBuilder|Model $query): self
     {
         if ($query instanceof Model) {
             $this->lockOnModel($query);
         }
 
-        if ($query instanceof BuilderContract) {
+        if ($query instanceof QueryBuilder || $query instanceof EloquentBuilder) {
             $this->lockOnQuery($query);
         }
 
@@ -75,7 +76,7 @@ class SafelyTransaction
         $this->lockModel = $model;
     }
 
-    protected function lockOnQuery(BuilderContract $query): void
+    protected function lockOnQuery(QueryBuilder|EloquentBuilder $query): void
     {
         $this->query = $query;
     }
